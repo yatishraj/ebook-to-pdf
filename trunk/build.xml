@@ -1,0 +1,55 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<project name="SLMExport" default="all" basedir=".">
+	<property name="src.dir" value="${basedir}/src"/>
+	<property name="lib.dir" value="${basedir}/lib"/>
+	<property name="build.dir" value="${basedir}/out"/>
+	<property name="build.jar" value="${basedir}/PDFNook.jar"/>
+
+
+	<target name="clean">
+		<delete dir="${build.dir}" failonerror="false" />
+		<delete file="${build.jar}"/>
+	</target>
+
+	<target name="compile">
+		<mkdir dir="${build.dir}"/>
+		<javac srcdir="${src.dir}" 
+			   destdir="${build.dir}" 
+			   debug="false" 
+			   optimize="true" 
+			   target="1.6"
+			   source="1.6"
+			   nowarn="false"
+			   fork="true"
+			   memoryInitialSize="128m"
+			   memoryMaximumSize="128m">
+			<classpath>
+				<fileset dir="${lib.dir}">
+					<include name="*.jar"/>
+				</fileset>
+			</classpath>
+		</javac>
+
+		<copy todir="${build.dir}">
+			<fileset dir="${src.dir}">
+				<exclude name="**/*.java" />
+			</fileset>
+		</copy>
+	</target>
+
+	<target name="jar"  depends="compile">
+		<delete file="${build.jar}"/>
+
+		<jar destfile="${build.jar}">
+			<fileset dir="${build.dir}"/>
+			<zipfileset src="lib/iText-5.0.5.jar"/>
+
+			<manifest>
+				<attribute name="Main-Class" value="app.PDFNook"/>
+			</manifest>
+		</jar>
+	</target>
+
+	<target name="all" depends="jar"/>
+
+</project>
