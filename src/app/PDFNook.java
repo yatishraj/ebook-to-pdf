@@ -81,8 +81,7 @@ public class PDFNook implements ParagraphListener {
 	}
 
 	public static void nookPdf(File inFile, String fileType, File outFile, String author, String title,
-			File pictureFile, int fontSize)
-			throws Exception {
+			File pictureFile, int fontSize, int pageWidth, int pageHeight) throws Exception {
 		if (outFile.exists()) {
 			outFile.delete();
 		}
@@ -91,17 +90,21 @@ public class PDFNook implements ParagraphListener {
 		fontAutor = FontFactory.getFont(VERDANA_TTF, BaseFont.IDENTITY_H, true, fontSize + 2, Font.ITALIC);
 		fontText = FontFactory.getFont(VERDANA_TTF, BaseFont.IDENTITY_H, true, fontSize, Font.NORMAL);
 
-		Rectangle pageSize = new RectangleReadOnly(300, 526);// 300x460
+		Rectangle pageSize = new RectangleReadOnly(pageWidth, pageHeight);
 		Document document = new Document(pageSize, 5, 5, 5, 5);
 		PdfWriter.getInstance(document, new FileOutputStream(outFile));
 		document.open();
 
-		if (title != null) document.addTitle(title);
-		if (author != null) document.addAuthor(author);
+		if (title != null)
+			document.addTitle(title);
+		if (author != null)
+			document.addAuthor(author);
 		document.addCreator(CREATOR);
 
-		if (title != null) addTitle(document, title);
-		if (author != null) addAutor(document, author);
+		if (title != null)
+			addTitle(document, title);
+		if (author != null)
+			addAutor(document, author);
 
 		if (pictureFile != null) {
 			addImage(document, pictureFile.getCanonicalPath());
@@ -194,9 +197,11 @@ public class PDFNook implements ParagraphListener {
 				}
 			} else if (c == '&') {
 				// skip hex escape
+				int escapedLength = 0;
 				while (true) {
 					i = reader.read();
 					if (i <= -1) {
+						System.err.println("WARNING: HTML & escape unfinished!");
 						break all;
 					}
 					pppppc = ppppc;
@@ -206,6 +211,9 @@ public class PDFNook implements ParagraphListener {
 					pc = c;
 					c = (char) i;
 					if (c == ';') {
+						if (escapedLength > 7) {
+							System.err.println("WARNING: HTML & escape too long!");
+						}
 						// < &lt;
 						if (ppc == 'l' && pc == 't') {
 							line.append('<');
@@ -256,6 +264,7 @@ public class PDFNook implements ParagraphListener {
 						}
 						break;
 					}
+					escapedLength++;
 				}
 			} else {
 				line.append(c);
@@ -307,7 +316,9 @@ public class PDFNook implements ParagraphListener {
 		System.out.println("      -a[uthor] author");
 		System.out.println("      -t[itle] title");
 		System.out.println("      -p[icture] file");
-		System.out.println("      -s[ize] of font");
+		System.out.println("      -s[ize] of font (default 10)");
+		System.out.println("      -w[idth] of page in pixels (default 300)");
+		System.out.println("      -h[eight] of page in pixels (default 526)");
 		System.out.println("      -i[nput] file to process (txt, html, epub, pdf)");
 		System.out.println("      -o[utput] file (pdf)");
 	}
@@ -345,6 +356,8 @@ public class PDFNook implements ParagraphListener {
 			String inputFile = null;
 			String outputFile = null;
 			int fontSize = 10;
+			int pageWidth = 300;
+			int pageHeight = 526;
 
 			for (int i = 0, l = args.length - 1; i < l; i++) {
 				final String arg = args[i].toLowerCase();
@@ -361,6 +374,16 @@ public class PDFNook implements ParagraphListener {
 				} else if (arg.startsWith("-s")) {
 					try {
 						fontSize = Integer.parseInt(args[i + 1], 10);
+					} catch (Exception e) {
+					}
+				} else if (arg.startsWith("-w")) {
+					try {
+						pageWidth = Integer.parseInt(args[i + 1], 10);
+					} catch (Exception e) {
+					}
+				} else if (arg.startsWith("-s")) {
+					try {
+						pageHeight = Integer.parseInt(args[i + 1], 10);
 					} catch (Exception e) {
 					}
 				}
@@ -409,7 +432,7 @@ public class PDFNook implements ParagraphListener {
 					System.err.println("ERROR: Only txt, html, or epub files are supported!");
 				}
 
-				nookPdf(inFile, fileType, outFile, author, title, pictureFile, fontSize);
+				nookPdf(inFile, fileType, outFile, author, title, pictureFile, fontSize, pageWidth, pageHeight);
 			} else {
 				System.err.println("ERROR: Input file does not exists!");
 			}
